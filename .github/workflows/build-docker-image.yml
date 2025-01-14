@@ -1,0 +1,107 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        required: true
+        default: 'main'
+      service:
+        type: choice
+        options:
+          - analyze-api
+          - auth-api
+          - contents-api
+          - playtherapy-langflow
+        description: 'Service name'
+        required: true
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Set up service name
+        id: setup_docker_service
+        run: |
+          service="${{ github.event.inputs.service }}"
+          if [[ "$service" == *-api ]]; then
+            service="${service%-api}"
+          fi
+          echo "service_name=$service" >> $GITHUB_OUTPUT
+
+      - name: Set current date and time
+        env:
+          TZ: "Asia/Tokyo"
+        id: date
+        run: echo "date=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+      - name: Get branch name
+        id: branch
+        run: echo "branch_name=$(echo '${{ github.event.inputs.branch }}' | tr '[:upper:]' '[:lower:]' | tr '/' '_' )" >> $GITHUB_OUTPUT
+      - name: Extract version from pyproject.toml
+        id: extract_version
+        run: |
+          version=$(grep '^version =' api/${{github.event.inputs.service}}/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "VERSION=$version" >> $GITHUB_OUTPUT
+
+      - name: Check version
+        run: |
+          if [ -z "${{ steps.extract_version.outputs.version }}" ]; then
+            echo "can't extract version"
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: docker address${{ github.event.inputs.service }}
+          tags: |
+            type=raw,value=${{ steps.extract_version.outputs.version }}_${{ steps.branch.outputs.branch_name }}_${{ steps.date.outputs.date }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: access key id
+          aws-secret-access-key: secret access key
+          aws-region: region
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            SOURCE_DIR=api/${{ github.event.inputs.service }}
+            APP_DIR=${{ github.event.inputs.service }}
+
+      - name: Output Docker Image Tag
+        id: output_tag
+        run: echo "image_tag=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
+
+      - name: Add Docker Image Tag to Summary
+        run: |
+          echo "## 🚀 Docker Image Tag" >> $GITHUB_STEP_SUMMARY
+          echo "<p><code>${{ github.event.inputs.service }}:${{ steps.extract_version.outputs.version }}_${{ steps.branch.outputs.branch_name }}_${{ steps.date.outputs.date }}</code></p>" >> $GITHUB_STEP_SUMMARY
+          

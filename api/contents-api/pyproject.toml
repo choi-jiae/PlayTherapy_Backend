@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "contents"
+version = "0.0.5"
+description = ""
+authors = ["lhj5772 <lhj5772@linecorp.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+dependency-injector = {extras= ["yaml"], version = "^4.41.0"}
+fastapi = "^0.108.0"
+pydantic = {extras = ["email"], version = "^2.6.1"}
+sqlalchemy = "2.0.25"
+requests = "^2.31.0"
+starlette = "^0.32.0"
+urllib3 = "^2.0.2"
+uvicorn = "^0.25.0"
+cryptography ="38.0.4"
+PyJWT = "2.8.0"
+passlib = "1.7.4"
+
+# local dependency
+core = { path = "../../package/core-package", develop = true }
+object = { path = "../../package/object-package", develop = true }
+pymysql = "^1.1.0"
+mysqlclient = "^2.2.4"
+bcrypt = "4.0.1"
+python-multipart = "^0.0.9"
+moviepy = "^1.0.3"
+pytz = "^2022.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.12.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

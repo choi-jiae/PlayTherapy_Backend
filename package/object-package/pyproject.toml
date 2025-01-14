@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "object"
+version = "0.1.0"
+description = ""
+authors = ["Ye-eun-Shin <ruby04215@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+boto3 = "1.34.56"
+botocore = "1.34.56"
+moviepy = "^1.0.3"
+
+# local dependency
+core = { path = "../../package/core-package", develop = true }
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.12.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

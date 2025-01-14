@@ -1,0 +1,18 @@
+applicationName: contents-api
+
+phase: RELEASE
+
+mysql:
+  db_url: db url
+  pool_recycle: 3600
+
+security:
+  secret_key: secret key
+  algorithm: HS256
+  expires_delta: 1440
+
+aws:
+  region: region
+  bucket: bucket
+  access_key: access key
+  secret_key: secret key

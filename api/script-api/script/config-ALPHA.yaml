@@ -1,0 +1,33 @@
+applicationName: script-api
+
+phase: ALPHA
+
+active_voice:
+  auth_token: auth token
+
+open_ai:
+  token: token
+  model: gpt-4o
+  temperature: 0.5
+
+mysql:
+  db_url: db url
+  pool_recycle: 3600
+
+security:
+  secret_key: secret key
+  algorithm: HS256
+  expires_delta: 60
+
+aws:
+  region: region
+  bucket: bucket
+  access_key: access key
+  secret_key: secret key
+
+external_volume:
+  path: path
+
+preprocessing:
+  video_split_output_path: path
+  encoding_video_output: paths

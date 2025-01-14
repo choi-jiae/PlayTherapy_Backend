@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "PlayTherapy_Backend"
+version = "0.1.0"
+description = ""
+authors = ["lhj5772 <lhj5772@me.com>"]
+readme = "README.md"
+packages = [
+    { include = "core", from = "package/core-package" },
+]
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+pandas = "^2.2.2"
+pyyaml = "^6.0.1"
+
+[tool.poetry.group.core-package.dependencies]
+core = { path = "package/core-package", develop = true }
+
+[tool.poetry.group.object-package.dependencies]
+object = { path = "package/object-package", develop = true }
+
+[tool.poetry.group.auth-api]
+optional = true
+
+[tool.poetry.group.auth-api.dependencies]
+auth = { path = "api/auth-api", develop = true }
+
+[tool.poetry.group.contents-api]
+optional = true
+
+[tool.poetry.group.contents-api.dependencies]
+contents = { path = "api/contents-api", develop = true }
+
+[tool.poetry.group.script-api]
+optional = true
+
+[tool.poetry.group.script-api.dependencies]
+script = { path = "api/script-api", develop = true }
+
+[tool.poetry.group.analyze-api]
+optional = true
+
+[tool.poetry.group.analyze-api.dependencies]
+analyze = { path = "api/analyze-api", develop = true }
+
+[tool.poetry.group.playtherapy]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+setuptools = "^69.0.3"
+ipykernel = "^6.29.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

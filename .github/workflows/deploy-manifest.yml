@@ -1,0 +1,70 @@
+name: Deploy manifest
+
+on:
+  workflow_dispatch:
+    inputs:
+      imageUrl:
+        description: 'input image Tag'
+        required: true
+      phase:
+        type: choice
+        description: 'select phase'
+        options:
+          - alpha
+          - release
+        default: dev
+jobs:
+  deploy_manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set environment variables based on phase
+        id: phased_env
+        run: |
+          input="${{ github.event.inputs.imageUrl }}"
+          IFS=':' read -r APP_TARGET IMAGE_TAG <<< "$input"
+          
+          echo "APP_TARGET=$APP_TARGET" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "KUSTOMIZATION_PATH=projects/play_therapy/${APP_TARGET}/overlays/${{ github.event.inputs.phase }}" >> $GITHUB_OUTPUT
+      - name: Clone Manifest
+        run: |
+          git clone manifest git url
+      - name: Set up Kustomize
+        run: |
+          curl -sLo kustomize.tar.gz https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.4.1/kustomize_v4.4.1_linux_amd64.tar.gz
+          tar -xzf kustomize.tar.gz
+          sudo mv kustomize /usr/local/bin/kustomize
+      - name: Update Image
+        run: |
+          cd EKS_Manifest/${{ steps.phased_env.outputs.KUSTOMIZATION_PATH }}
+          /usr/local/bin/kustomize edit set image docker address${{steps.phased_env.outputs.APP_TARGET}}:${{ steps.phased_env.outputs.IMAGE_TAG }}
+      - name: Check for changes
+        id: check_changes
+        run: |
+          cd EKS_Manifest
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Push Manifest
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          cd EKS_Manifest
+          git config --global user.email "email"
+          git config --global user.name "github_action"
+          git add .
+          git commit -m "Update image for ${{ steps.phased_env.outputs.APP_TARGET }} in ${{ steps.phased_env.outputs.PHASE }}"
+          git push origin main
+      - name: Deploy Manifest Summary
+        run: |
+          if [ "${{ steps.check_changes.outputs.has_changes }}" == "false" ]; then
+            echo "## No changes to deploy" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- app_target: <p><code>${{ steps.phased_env.outputs.APP_TARGET }}</code></p>" >> $GITHUB_STEP_SUMMARY
+            echo "- phase: <p><code>${{ github.event.inputs.phase }}</code></p>" >> $GITHUB_STEP_SUMMARY
+            echo "- directory: <p><code>${{ steps.phased_env.outputs.KUSTOMIZATION_PATH }}</code></p>" >> $GITHUB_STEP_SUMMARY
+            echo "- image_tag: <p><code>${{ steps.phased_env.outputs.IMAGE_TAG }}</code></p>" >> $GITHUB_STEP_SUMMARY
+          fi
